@@ -70,6 +70,7 @@ export function resumenDia(ventas) {
   const r = {
     total: 0, monto: 0, cantidad: 0, anuladas: 0,
     porMedio: Object.fromEntries(CASILLEROS.map((c) => [c.clave, 0])),
+    cantidadPorMedio: Object.fromEntries(CASILLEROS.map((c) => [c.clave, 0])),
     recargos: { cantidad: 0, monto: 0 },
     comisiones: 0,
     ganancia: 0,
@@ -84,6 +85,7 @@ export function resumenDia(ventas) {
     r.monto += Number(v.monto) || 0;
     const k = claveMedio(v);
     r.porMedio[k] = (r.porMedio[k] || 0) + total;
+    r.cantidadPorMedio[k] = (r.cantidadPorMedio[k] || 0) + 1;
     if (Number(v.recargo) > 0) {
       r.recargos.cantidad++;
       r.recargos.monto += Number(v.recargo);

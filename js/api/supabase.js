@@ -199,6 +199,11 @@ export async function leerTicket(id) {
   return funcion('leer-ticket', { ticket_id: id });
 }
 
+// ---------- datos del prototipo ----------
+export async function importarPrototipo(datos) {
+  return r(sb.rpc('importar_prototipo', { p: datos }));
+}
+
 // ---------- copia de seguridad ----------
 export async function exportarTodo() {
   const tablas = { config: 'id', productos: 'id', ventas: 'id', cajas: 'fecha', tickets: 'id', movimientos_stock: 'id' };

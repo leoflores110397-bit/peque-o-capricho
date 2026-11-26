@@ -43,6 +43,7 @@ test('resumen del día separa tarjetas por posnet y no cuenta anuladas', () => {
   assert.equal(r.porMedio.credito_getnet, 2200);
   assert.equal(r.porMedio.debito_mercadopago, 3000);
   assert.equal(r.porMedio.qr, 500);
+  assert.equal(r.cantidadPorMedio.efectivo, 1);
   assert.deepEqual(r.recargos, { cantidad: 1, monto: 200 });
   assert.equal(r.comisiones, 137);
   assert.equal(r.ganancia, 2600); // (1000-400) + (3000-1000); el recargo no suma ganancia

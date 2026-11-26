@@ -1,9 +1,9 @@
 // Service worker: permite instalar la app y abrirla aunque no haya internet.
 // Al cambiar cualquier archivo de la app, subir este número para que se actualice.
-const VERSION = 'pc-v1';
+const VERSION = 'pc-v2';
 const ARCHIVOS = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'js/app.js', 'js/config.js', 'js/calculos.js', 'js/estado.js', 'js/ui.js', 'js/tema.js',
+  'js/app.js', 'js/config.js', 'js/calculos.js', 'js/importar.js', 'js/estado.js', 'js/ui.js', 'js/tema.js',
   'js/api/index.js', 'js/api/demo.js', 'js/api/supabase.js',
   'js/views/vender.js', 'js/views/hoy.js', 'js/views/caja.js', 'js/views/stock.js',
   'js/views/tickets.js', 'js/views/historial.js', 'js/views/mas.js',

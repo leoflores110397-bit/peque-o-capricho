@@ -246,6 +246,29 @@ export async function leerTicket() {
   throw new Error('En el modo de prueba no se leen tickets con IA.');
 }
 
+export async function importarPrototipo({ productos: prods = [], ventas = [] }) {
+  await esperar();
+  const d = cargar();
+  const res = { productos_nuevos: 0, productos_actualizados: 0, ventas: 0 };
+  const buscar = (n) => d.productos.find((p) => p.activo && p.nombre.trim().toLowerCase() === String(n || '').trim().toLowerCase());
+  for (const i of prods) {
+    const p = buscar(i.nombre);
+    if (p) { Object.assign(p, { cantidad: i.cantidad, costo: i.costo, precio: i.precio, rubro: i.rubro || p.rubro }); res.productos_actualizados++; }
+    else { d.productos.push({ id: crypto.randomUUID(), activo: true, foto_path: null, ...i }); res.productos_nuevos++; }
+  }
+  for (const v of ventas) {
+    if (d.ventas.some((x) => x.client_id === v.client_id)) continue;
+    const p = buscar(v.producto_nombre);
+    const c = calcularVenta({ monto: v.monto, recargoPct: v.recargo_pct, medio: v.medio, posnet: v.posnet, config: d.config });
+    d.ventas.push({ ...v, id: crypto.randomUUID(), producto_id: p?.id || null, recargo: v.recargo, total: v.total,
+      comision_pct: c.comisionPct, comision: redondear((v.total * c.comisionPct) / 100),
+      costo: p ? redondear(p.costo * v.cantidad) : null, stock_descontado: 0, anulada: false });
+    res.ventas++;
+  }
+  guardar();
+  return res;
+}
+
 export async function exportarTodo() {
   const { sesion: _s, archivos: _a, ...resto } = cargar();
   return { exportado_en: new Date().toISOString(), modo: 'prueba', ...copia(resto) };

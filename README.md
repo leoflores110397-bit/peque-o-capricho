@@ -19,6 +19,8 @@ Pensada para usarse fácil: botones grandes, palabras simples, "Vender" es lo pr
 
 Si se corta internet, la venta se guarda en el aparato y se sube sola cuando vuelve la conexión.
 
+Mantiene las costumbres del prototipo: la venta arranca en Efectivo, recuerda el último posnet y recargo usados, y en Stock hay botones − / + para cada producto.
+
 ---
 
 ## 1. Probarla ya (modo de prueba, sin nube)
@@ -72,6 +74,14 @@ La anon key es pública por diseño; lo que protege los datos son los permisos d
 - **Compu (Chrome/Edge):** ícono de instalar en la barra de direcciones.
 
 Queda con el ícono del logo y se abre como una app.
+
+### 2.6 Pasar los datos del prototipo
+La app vieja (el prototipo de un solo archivo) guarda los datos solo en el aparato donde se usó. Para traerlos:
+
+1. En la app vieja: **Stock › Copiar copia de seguridad**.
+2. En la app nueva: **Más › Ajustes › Traer datos de la app vieja**, pegar y tocar **Traer datos**.
+
+Se traen los productos (nombre, cantidad, costo y precio) y todas las ventas, con su recargo y posnet. Las ventas viejas **no** descuentan stock. Se puede repetir sin miedo: las ventas no se duplican y el stock queda como en la app vieja. Las cajas del prototipo no se pueden traer, porque su copia no las incluye.
 
 ## 3. Fotos de tickets por email
 
@@ -132,6 +142,7 @@ index.html, manifest.webmanifest, sw.js   PWA (sin paso de compilación)
 css/app.css                               estilos, colores de marca, modo claro/oscuro
 js/app.js                                 login, menú y cambio de pantallas
 js/calculos.js                            cuentas (recargo, comisiones, caja, historial) - con pruebas
+js/importar.js                            convierte la copia del prototipo - con pruebas
 js/estado.js                              datos compartidos y ventas sin internet
 js/api/supabase.js | demo.js              conexión a la nube | modo de prueba
 js/views/*.js                             una pantalla por archivo

@@ -1,8 +1,9 @@
 import { api } from '../api/index.js';
-import { estado, puedeVender, cargarConfig } from '../estado.js';
+import { estado, puedeVender, cargarConfig, cargarProductos } from '../estado.js';
 import { leerNumero, fechaLocal } from '../calculos.js';
 import { esc, $, $$, aviso, avisoError, confirmar, ocupado } from '../ui.js';
 import { aplicarTema, temaGuardado } from '../tema.js';
+import { convertirPrototipo } from '../importar.js';
 
 export async function render(raiz) {
   const p = estado.perfil;
@@ -82,6 +83,18 @@ export async function renderAjustes(raiz) {
     </form>
 
     <section class="tarjeta">
+      <h2 class="titulo-seccion">Traer datos de la app vieja</h2>
+      <ol class="pasos">
+        <li>En la app vieja, entrá a <strong>Stock</strong> y tocá <strong>"Copiar copia de seguridad"</strong>.</li>
+        <li>Volvé acá, mantené apretado el cuadro de abajo y elegí <strong>Pegar</strong>.</li>
+        <li>Tocá <strong>Traer datos</strong>.</li>
+      </ol>
+      <textarea id="copia-vieja" class="input" rows="3" placeholder="Pegá acá la copia" aria-label="Copia de la app vieja"></textarea>
+      <button type="button" class="btn btn-grande btn-suave" id="importar">📥 Traer datos</button>
+      <p class="nota">Se puede hacer más de una vez: las ventas no se repiten y el stock se actualiza con lo de la app vieja.</p>
+    </section>
+
+    <section class="tarjeta">
       <h2 class="titulo-seccion">Copia de seguridad</h2>
       <p class="nota">${api.modo === 'nube'
         ? 'Todo se guarda en la nube y cada noche se hace una copia automática. Si querés, podés bajar una copia a este aparato.'
@@ -114,6 +127,29 @@ export async function renderAjustes(raiz) {
           rubros: rubros.length ? [...new Set(rubros)] : ['Otros'],
         });
         aviso('Ajustes guardados ✓');
+      } catch (err) { avisoError(err); }
+    });
+  };
+
+  $('#importar', raiz).onclick = async (e) => {
+    let datos;
+    try {
+      datos = convertirPrototipo($('#copia-vieja', raiz).value);
+    } catch (err) { avisoError(err); return; }
+    const ok = await confirmar({
+      titulo: '¿Traer estos datos?',
+      texto: `<strong>${datos.productos.length}</strong> productos y <strong>${datos.ventas.length}</strong> ventas de la app vieja.
+              <br>Las ventas viejas no cambian el stock.`,
+      si: 'Sí, traer', no: 'Cancelar',
+    });
+    if (!ok) return;
+    ocupado(e.target, async () => {
+      try {
+        const r = await api.importarPrototipo(datos);
+        $('#copia-vieja', raiz).value = '';
+        const ya = datos.ventas.length - r.ventas;
+        aviso(`Listo ✓ ${r.productos_nuevos} productos nuevos, ${r.productos_actualizados} actualizados y ${r.ventas} ventas${ya ? ` (${ya} ya estaban)` : ''}.`, { duracion: 7000 });
+        await cargarProductos().catch(() => {});
       } catch (err) { avisoError(err); }
     });
   };

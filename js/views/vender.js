@@ -5,9 +5,11 @@ import { esc, $, $$, aviso, avisoError, alerta, hoja, ocupado, campoPesos, icono
 import { sacarFotoTicket } from './tickets.js';
 
 const RECARGOS_RAPIDOS = [0, 10, 15, 20, 25];
+// Como en el prototipo: arranca en Efectivo y recuerda el último posnet y recargo usados.
+const recordado = (k, def) => { try { return localStorage.getItem(k) ?? def; } catch { return def; } };
 const nuevaVenta = () => ({
-  producto: null, cantidad: 1, monto: 0, montoAuto: true, rubro: null, medio: null,
-  posnet: localStorage.getItem('pc-ultimo-posnet') || null, recargoPct: 0,
+  producto: null, cantidad: 1, monto: 0, montoAuto: true, rubro: null, medio: 'efectivo',
+  posnet: recordado('pc-ultimo-posnet', 'mercadopago'), recargoPct: Number(recordado('pc-ultimo-recargo', 0)) || 0,
 });
 
 let f = nuevaVenta();
@@ -78,6 +80,8 @@ export async function render(raiz) {
     </form>`;
 
   const form = $('#form-venta', raiz);
+  if (!f.rubro) f.rubro = rubros()[0];
+  if (f.recargoPct && !RECARGOS_RAPIDOS.includes(f.recargoPct)) $('#recargo-otro', form).value = String(f.recargoPct).replace('.', ',');
   const inMonto = $('#monto', form);
   campoPesos(inMonto, () => { f.monto = leerNumero(inMonto.value); f.montoAuto = false; pintar(); });
 
@@ -91,7 +95,6 @@ export async function render(raiz) {
       f.rubro = b.dataset.rubro;
     } else if (b.dataset.medio) {
       f.medio = b.dataset.medio;
-      if (!ES_TARJETA(f.medio)) f.recargoPct = 0;
     } else if (b.dataset.posnet) {
       f.posnet = b.dataset.posnet;
     } else if (b.dataset.recargo !== undefined) {
@@ -201,10 +204,16 @@ export async function render(raiz) {
           producto_id: f.producto?.id || null, producto_nombre: f.producto?.nombre || null,
         };
         const r = await guardarVenta(datos);
-        if (ES_TARJETA(f.medio)) localStorage.setItem('pc-ultimo-posnet', f.posnet);
+        if (ES_TARJETA(f.medio)) {
+          try {
+            localStorage.setItem('pc-ultimo-posnet', f.posnet);
+            localStorage.setItem('pc-ultimo-recargo', String(f.recargoPct));
+          } catch { /* sin lugar */ }
+        }
         const prod = f.producto;
         const eraTarjeta = ES_TARJETA(f.medio);
         f = nuevaVenta();
+        f.rubro = rubros()[0];
         pintar();
         window.scrollTo({ top: 0, behavior: 'smooth' });
 

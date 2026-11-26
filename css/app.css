@@ -338,6 +338,18 @@ ul[role="list"] { list-style: none; margin: 0; padding: 0; display: flex; flex-d
 .producto-cantidad.poco { background: var(--rojo-fondo); }
 .producto-cantidad.poco small { color: var(--rojo); }
 
+.producto-fila { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio-chico); overflow: hidden; }
+.producto-fila .producto { border: 0; border-radius: 0; }
+.producto-editar { font-size: 1.1rem; opacity: .6; }
+.producto-stock {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 6px 10px 8px 14px; border-top: 1px solid var(--borde); font-weight: 700; color: var(--texto-suave);
+}
+.producto-stock.poco-fondo { background: var(--rojo-fondo); }
+.contador-chico { gap: 10px; }
+.contador-chico .btn-redondo { width: 48px; height: 48px; font-size: 1.5rem; }
+.contador-chico output { font-size: 1.6rem; min-width: 40px; }
+
 /* formulario de producto */
 .foto-grande {
   width: 100%; aspect-ratio: 4 / 3; max-height: 240px; border-radius: var(--radio);
@@ -366,6 +378,7 @@ ul[role="list"] { list-style: none; margin: 0; padding: 0; display: flex; flex-d
   display: flex; flex-direction: column; align-items: center; text-align: center;
   background: var(--degrade); color: #fff; border: 0; font-weight: 700;
 }
+.total-desglose { font-size: .9rem; opacity: .95; }
 .numero-grande { font-family: var(--titulos); font-size: 2.8rem; line-height: 1.1; }
 
 .casilleros { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -449,6 +462,9 @@ ul[role="list"] { list-style: none; margin: 0; padding: 0; display: flex; flex-d
 }
 .opcion span { font-size: 1.6rem; }
 .opcion-suave { color: var(--texto-suave); box-shadow: none; }
+.pasos { margin: 0 0 12px; padding-left: 22px; }
+.pasos li { margin-bottom: 4px; }
+textarea.input { resize: vertical; min-height: 90px; font-size: .95rem; margin-bottom: 10px; }
 .lista-rubros { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
 .rubro { display: flex; gap: 8px; align-items: center; }
 

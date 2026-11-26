@@ -48,7 +48,23 @@ export async function render(raiz) {
     pintar();
   });
   $('#nuevo', raiz).onclick = () => formulario(null, () => render(raiz));
-  $('#lista', raiz).addEventListener('click', (e) => {
+  $('#lista', raiz).addEventListener('click', async (e) => {
+    const aj = e.target.closest('[data-ajuste]');
+    if (aj) {
+      const p = estado.productos.find((x) => x.id === aj.dataset.pid);
+      const cambio = Number(aj.dataset.ajuste);
+      if (cambio < 0 && p.cantidad === 0) return;
+      p.cantidad = Math.max(0, p.cantidad + cambio); // se ve al instante
+      pintar();
+      try {
+        p.cantidad = await api.ajustarStock(p.id, cambio);
+      } catch (err) {
+        p.cantidad = Math.max(0, p.cantidad - cambio);
+        avisoError(err);
+      }
+      pintar();
+      return;
+    }
     const b = e.target.closest('[data-id]');
     if (b) formulario(estado.productos.find((p) => p.id === b.dataset.id), () => render(raiz));
   });
@@ -59,18 +75,26 @@ function tarjetaProducto(p) {
   const g = gananciaProducto(p);
   const poco = p.cantidad <= avisoStock();
   return `
-    <li><button type="button" class="producto" data-id="${p.id}" aria-label="Editar ${esc(p.nombre)}">
-      ${miniFoto(p, 'foto-producto')}
-      <span class="producto-texto">
-        <strong>${esc(p.nombre)}</strong>
-        <small>${esc(p.rubro)}</small>
-        <span class="producto-precios">Venta <b>${pesos(p.precio)}</b> · Costo ${pesos(p.costo)}</span>
-        <span class="ganancia">Ganás ${pesos(g.ganancia)}${g.porcentaje !== null ? ` (${g.porcentaje}%)` : ''}</span>
-      </span>
-      <span class="producto-cantidad ${poco ? 'poco' : ''}">
-        <b>${p.cantidad}</b><small>${poco ? (p.cantidad === 0 ? 'sin stock' : 'poco') : 'en stock'}</small>
-      </span>
-    </button></li>`;
+    <li class="producto-fila">
+      <button type="button" class="producto" data-id="${p.id}" aria-label="Editar ${esc(p.nombre)}">
+        ${miniFoto(p, 'foto-producto')}
+        <span class="producto-texto">
+          <strong>${esc(p.nombre)}</strong>
+          <small>${esc(p.rubro)}</small>
+          <span class="producto-precios">Venta <b>${pesos(p.precio)}</b> · Costo ${pesos(p.costo)}</span>
+          <span class="ganancia">Ganás ${pesos(g.ganancia)}${g.porcentaje !== null ? ` (${g.porcentaje}%)` : ''}</span>
+        </span>
+        <span class="producto-editar" aria-hidden="true">✏️</span>
+      </button>
+      <div class="producto-stock ${poco ? 'poco-fondo' : ''}">
+        <span class="${poco ? 'poco' : ''}">${p.cantidad === 0 ? 'Sin stock' : poco ? 'Queda poco' : 'En stock'}</span>
+        <div class="contador contador-chico" role="group" aria-label="Cantidad de ${esc(p.nombre)}">
+          <button type="button" class="btn-redondo" data-ajuste="-1" data-pid="${p.id}" aria-label="Restar uno" ${p.cantidad === 0 ? 'disabled' : ''}>−</button>
+          <output>${p.cantidad}</output>
+          <button type="button" class="btn-redondo" data-ajuste="1" data-pid="${p.id}" aria-label="Sumar uno">+</button>
+        </div>
+      </div>
+    </li>`;
 }
 
 function formulario(p, alGuardar) {

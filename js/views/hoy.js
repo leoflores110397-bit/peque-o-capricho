@@ -34,12 +34,13 @@ export async function render(raiz) {
       <span>Vendiste ${esHoy ? 'hoy' : 'ese día'}</span>
       <strong class="numero-grande">${pesos(r.total)}</strong>
       <span>${r.cantidad} ${r.cantidad === 1 ? 'venta' : 'ventas'}${r.anuladas ? ` · ${r.anuladas} anulada${r.anuladas > 1 ? 's' : ''}` : ''}</span>
+      ${r.recargos.monto ? `<span class="total-desglose">Productos ${pesos(r.monto)} · Recargos ${pesos(r.recargos.monto)}</span>` : ''}
     </section>
 
     <section class="casilleros" aria-label="Total por medio de pago">
       ${CASILLEROS.map((c) => `
         <div class="casillero ${r.porMedio[c.clave] ? '' : 'vacio-suave'}">
-          <span>${esc(c.nombre)}</span><strong>${pesos(r.porMedio[c.clave])}</strong>
+          <span>${esc(c.nombre)}${r.cantidadPorMedio[c.clave] ? ` (${r.cantidadPorMedio[c.clave]})` : ''}</span><strong>${pesos(r.porMedio[c.clave])}</strong>
         </div>`).join('')}
     </section>
 

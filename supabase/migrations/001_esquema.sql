@@ -518,3 +518,62 @@ create policy tickets_subir on storage.objects for insert to authenticated
 drop policy if exists tickets_ver on storage.objects;
 create policy tickets_ver on storage.objects for select to authenticated
   using (bucket_id = 'tickets' and public.puede_vender());
+
+-- ---------------------------------------------------------------------
+-- Traer datos del prototipo (app vieja). Se puede correr varias veces:
+--  - productos: si ya existe uno con el mismo nombre se actualiza
+--  - ventas: no se duplican (client_id fijo) y NO descuentan stock
+-- ---------------------------------------------------------------------
+create or replace function public.importar_prototipo(p jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  i jsonb;
+  v_prod productos;
+  v_nuevos int := 0;
+  v_actualizados int := 0;
+  v_ventas int := 0;
+  v_filas int;
+begin
+  if not puede_vender() then raise exception 'No tenés permiso' using errcode = '42501'; end if;
+  perform set_config('app.motivo', 'importacion', true);
+
+  for i in select * from jsonb_array_elements(coalesce(p->'productos', '[]'::jsonb)) loop
+    select * into v_prod from productos
+     where activo and lower(trim(nombre)) = lower(trim(i->>'nombre')) limit 1;
+    if found then
+      update productos set cantidad = greatest((i->>'cantidad')::int, 0), costo = (i->>'costo')::numeric,
+             precio = (i->>'precio')::numeric, rubro = coalesce(nullif(i->>'rubro', ''), rubro)
+       where id = v_prod.id;
+      v_actualizados := v_actualizados + 1;
+    else
+      insert into productos (nombre, rubro, cantidad, costo, precio)
+      values (trim(i->>'nombre'), coalesce(nullif(i->>'rubro', ''), 'Otros'),
+              greatest((i->>'cantidad')::int, 0), (i->>'costo')::numeric, (i->>'precio')::numeric);
+      v_nuevos := v_nuevos + 1;
+    end if;
+  end loop;
+  perform set_config('app.motivo', '', true);
+
+  for i in select * from jsonb_array_elements(coalesce(p->'ventas', '[]'::jsonb)) loop
+    select * into v_prod from productos
+     where activo and lower(trim(nombre)) = lower(trim(coalesce(i->>'producto_nombre', ''))) limit 1;
+    insert into ventas (client_id, creado_en, fecha, producto_id, producto_nombre, cantidad, rubro, monto,
+                        recargo_pct, recargo, total, medio, posnet, comision_pct, comision, costo)
+    values ((i->>'client_id')::uuid, (i->>'creado_en')::timestamptz, fecha_local((i->>'creado_en')::timestamptz),
+            v_prod.id, nullif(i->>'producto_nombre', ''), greatest((i->>'cantidad')::int, 1),
+            coalesce(nullif(i->>'rubro', ''), 'Otros'), (i->>'monto')::numeric,
+            coalesce((i->>'recargo_pct')::numeric, 0), coalesce((i->>'recargo')::numeric, 0), (i->>'total')::numeric,
+            i->>'medio', nullif(i->>'posnet', ''),
+            coalesce(comision_para(i->>'medio', nullif(i->>'posnet', '')), 0),
+            round((i->>'total')::numeric * coalesce(comision_para(i->>'medio', nullif(i->>'posnet', '')), 0) / 100, 2),
+            case when v_prod.id is not null then round(v_prod.costo * greatest((i->>'cantidad')::int, 1), 2) end)
+    on conflict (client_id) do nothing;
+    get diagnostics v_filas = row_count;
+    v_ventas := v_ventas + v_filas;
+  end loop;
+
+  return jsonb_build_object('productos_nuevos', v_nuevos, 'productos_actualizados', v_actualizados,
+                            'ventas', v_ventas);
+end $$;
+grant execute on function public.importar_prototipo(jsonb) to authenticated;
+revoke execute on function public.importar_prototipo(jsonb) from anon;
