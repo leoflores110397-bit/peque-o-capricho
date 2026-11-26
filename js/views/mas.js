@@ -15,9 +15,9 @@ export async function render(raiz) {
         <a class="opcion" href="#historial"><span aria-hidden="true">📅</span>Historial de cierres</a>
         <a class="opcion" href="#ajustes"><span aria-hidden="true">⚙️</span>Ajustes y comisiones</a>` : ''}
       <button type="button" class="opcion" id="tema"><span aria-hidden="true">🌓</span>Modo claro / oscuro</button>
-      <button type="button" class="opcion opcion-suave" id="salir"><span aria-hidden="true">🚪</span>Cerrar sesión</button>
+      <button type="button" class="opcion opcion-suave" id="salir"><span aria-hidden="true">🚪</span>Salir / cambiar de persona</button>
     </nav>
-    <p class="nota centro">Entraste como <strong>${esc(p?.nombre || '')}</strong>${p?.email ? ` (${esc(p.email)})` : ''}
+    <p class="nota centro">Está usando la app: <strong>${esc(p?.nombre || '')}</strong>
       ${api.modo === 'prueba' ? '<br><strong>Modo de prueba:</strong> los datos quedan solo en este aparato.' : ''}</p>`;
 
   $('#tema', raiz).onclick = () => {
@@ -27,7 +27,7 @@ export async function render(raiz) {
     aviso({ auto: 'Tema automático (como el celular)', claro: 'Modo claro', oscuro: 'Modo oscuro' }[sig]);
   };
   $('#salir', raiz).onclick = async () => {
-    const ok = await confirmar({ titulo: '¿Cerrar sesión?', texto: 'Para volver a entrar vas a necesitar tu correo y tu clave.', si: 'Sí, salir' });
+    const ok = await confirmar({ titulo: '¿Salir?', texto: 'Para volver a entrar, cualquiera de ustedes pone su DNI. El correo del local queda guardado.', si: 'Sí, salir' });
     if (!ok) return;
     await api.salir();
     location.hash = '';

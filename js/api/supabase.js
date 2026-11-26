@@ -1,6 +1,7 @@
 // Conexión real con Supabase (base de datos, login y archivos en la nube).
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.js';
+import { correoDeAcceso, normalizarDni } from '../acceso.js';
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'pc-sesion' },
@@ -11,6 +12,7 @@ function error(e) {
   if (!e) return;
   const msg = e.message || String(e);
   if (/Invalid login credentials/i.test(msg)) throw new Error('Correo o clave incorrectos');
+  if (/rate limit|too many/i.test(msg)) throw new Error('Demasiados intentos. Esperá unos minutos y probá de nuevo.');
   if (/Failed to fetch|NetworkError|network/i.test(msg)) {
     const err = new Error('No hay internet');
     err.sinInternet = true;
@@ -49,8 +51,15 @@ export async function sesion() {
   return data.session ? { email: data.session.user.email, id: data.session.user.id } : null;
 }
 
-export async function entrar(email, clave) {
-  await r(sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: clave }));
+/** Entra con el correo del local y el DNI de la persona (ver js/acceso.js). */
+export async function entrar(correoLocal, dni) {
+  const email = await correoDeAcceso(correoLocal, dni);
+  try {
+    await r(sb.auth.signInWithPassword({ email, password: normalizarDni(dni) }));
+  } catch (e) {
+    if (/incorrectos/.test(e.message)) throw new Error('Correo del local o DNI incorrectos');
+    throw e;
+  }
 }
 
 export async function salir() {

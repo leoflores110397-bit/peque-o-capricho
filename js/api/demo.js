@@ -122,6 +122,7 @@ export async function registrarVenta(v) {
     rubro: v.rubro || 'Otros', monto: c.monto, recargo_pct: c.recargoPct, recargo: c.recargo, total: c.total,
     medio: v.medio, posnet: v.medio === 'debito' || v.medio === 'credito' ? v.posnet : null,
     comision_pct: c.comisionPct, comision: c.comision, costo: null, stock_descontado: 0, anulada: false,
+    vendido_por: v.vendido_por || null,
   };
   let quedan = null;
   const p = v.producto_id && d.productos.find((x) => x.id === v.producto_id);

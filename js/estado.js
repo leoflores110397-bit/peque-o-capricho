@@ -10,7 +10,7 @@ export const estado = {
 const leer = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
 const escribir = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* sin lugar */ } };
 
-export const puedeVender = () => ['duena', 'admin'].includes(estado.perfil?.rol);
+export const puedeVender = () => ['duena', 'empleado', 'admin'].includes(estado.perfil?.rol);
 
 export async function cargarConfig() {
   try {
@@ -52,7 +52,10 @@ export const pendientes = () => leer(PEND, []);
  * Devuelve { venta, quedan, pendiente }.
  */
 export async function guardarVenta(datos) {
-  const v = { ...datos, client_id: crypto.randomUUID(), creado_en: new Date().toISOString() };
+  const v = {
+    ...datos, client_id: crypto.randomUUID(), creado_en: new Date().toISOString(),
+    vendido_por: estado.perfil?.nombre || null,
+  };
   try {
     const r = await api.registrarVenta(v);
     actualizarStockLocal(v.producto_id, r.quedan);

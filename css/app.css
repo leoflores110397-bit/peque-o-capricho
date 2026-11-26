@@ -124,6 +124,13 @@ small { font-size: 0.85em; }
 .cabecera-texto { display: flex; flex-direction: column; line-height: 1; }
 .cabecera-texto strong { font-family: var(--titulos); font-size: 1.35rem; font-weight: 800; letter-spacing: .01em; }
 .cabecera-texto small { font-weight: 700; opacity: .9; font-size: .85rem; }
+.quien {
+  margin-left: 8px; color: #fff; text-decoration: none; font-weight: 800; font-size: .9rem;
+  background: rgba(255,255,255,.2); padding: 6px 12px; border-radius: 99px; white-space: nowrap;
+  max-width: 40vw; overflow: hidden; text-overflow: ellipsis;
+}
+.estado-red:not([hidden]) + .quien { margin-left: 8px; }
+.cabecera .estado-red[hidden] + .quien { margin-left: auto; }
 .estado-red {
   margin-left: auto; background: rgba(0,0,0,.25); padding: 4px 10px; border-radius: 99px;
   font-size: .8rem; font-weight: 800;

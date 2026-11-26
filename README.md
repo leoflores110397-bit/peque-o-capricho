@@ -32,7 +32,7 @@ npm start            # o: python3 -m http.server 5173
 # abrir http://localhost:5173
 ```
 
-Se entra con cualquier correo y clave. Si el correo empieza con `ayudante` se prueba el rol de ayudante (solo ve Stock).
+Se entra con cualquier correo y cualquier DNI. Si el correo empieza con `ayudante` se prueba el rol de ayudante (solo ve Stock).
 
 ## 2. Ponerla en marcha con la nube (Supabase)
 
@@ -40,19 +40,37 @@ Se entra con cualquier correo y clave. Si el correo empieza con `ayudante` se pr
 1. Crear una cuenta en <https://supabase.com> y un proyecto nuevo (región **South America (São Paulo)**). El plan gratis alcanza.
 2. En **SQL Editor › New query**, pegar todo `supabase/migrations/001_esquema.sql` y tocar **Run**.
 
-### 2.2 Usuarios y clave corta
-1. **Authentication › Sign In / Providers**: dejar *Email* activado, **desactivar "Allow new users to sign up"** (así nadie más se puede registrar) y desactivar *Confirm email*.
-2. **Authentication › Users › Add user › Create new user**: el correo de la dueña y una clave de **6 números** (Supabase pide 6 como mínimo).
-3. Darle el rol de dueña (en **SQL Editor**):
+### 2.2 Accesos: correo del local + DNI
+Para entrar se pone el **correo del local** (queda guardado en el aparato) y el **DNI de la persona** (sin puntos) como clave. Así la app sabe quién la está usando y cada venta queda anotada con quién la hizo ("vendió Lucía").
 
-   ```sql
-   update perfiles set rol = 'duena', nombre = 'Nombre de la dueña'
-   where id = (select id from auth.users where email = 'correo@de-la-duena.com');
+| Persona | Rol | Qué puede hacer |
+|---|---|---|
+| Mamá | `duena` | Todo |
+| Hijo (programador) | `admin` | Todo |
+| Lucía | `empleado` | Todo, igual que la dueña |
+| Joaquín | `empleado` | Todo, igual que la dueña |
+
+También existe el rol `ayudante` (solo Stock), pensado para cuando se sume la venta online.
+
+Cómo se crean los accesos:
+
+1. En Supabase, **Authentication › Sign In / Providers**: dejar *Email* activado, **desactivar "Allow new users to sign up"** (nadie más se puede registrar) y desactivar *Confirm email*.
+2. Copiar `scripts/accesos.ejemplo.json` a `scripts/accesos.json` y completar el correo del local, los nombres y los DNI reales. Ese archivo **no se sube a GitHub** (está en `.gitignore`).
+3. Correr (con la *service_role key* de **Project Settings › API**, que es secreta y nunca va en la app):
+
+   ```bash
+   SUPABASE_URL=https://xxxx.supabase.co SUPABASE_SERVICE_ROLE_KEY=eyJ... node scripts/crear-accesos.mjs
    ```
 
-   Roles: `duena` (vende, caja, stock, ajustes), `ayudante` (stock/catálogo; más adelante pedidos online), `admin` (todo). Los usuarios nuevos quedan como `ayudante` hasta que se les cambie.
+4. Borrar `scripts/accesos.json` o guardarlo en un lugar seguro.
 
-La sesión queda abierta en el aparato: la clave se pide solo la primera vez (o si se toca "Cerrar sesión").
+El script se puede volver a correr para cambiar un nombre, un rol o un DNI, o para sumar a alguien. Para sacarle el acceso a alguien: **Authentication › Users** › borrar su usuario.
+
+Cómo funciona por dentro: en Supabase cada persona es un usuario aparte. Su usuario se arma solo con el correo del local y un código que sale del DNI (por ejemplo `pequenocapricho+u3f9a1c2b7d4e@gmail.com`), así el DNI no queda escrito en ningún lado. A ese correo nunca llegan emails. Ver `js/acceso.js`.
+
+Un DNI no es una clave muy secreta: mucha gente lo conoce. Supabase limita los intentos de entrada, así que no se puede probar DNIs al azar. Igual conviene no compartir el correo del local fuera de la familia, y cerrar la sesión ("Más › Salir / cambiar de persona") si un aparato queda en manos de otra persona.
+
+La sesión queda abierta en cada aparato. En un aparato compartido, para cambiar de persona: **Más › Salir / cambiar de persona** y entrar con el otro DNI.
 
 ### 2.3 Conectar la app
 En **Project Settings › API** copiar la *Project URL* y la *anon public key* a `js/config.js`:
@@ -143,6 +161,8 @@ css/app.css                               estilos, colores de marca, modo claro/
 js/app.js                                 login, menú y cambio de pantallas
 js/calculos.js                            cuentas (recargo, comisiones, caja, historial) - con pruebas
 js/importar.js                            convierte la copia del prototipo - con pruebas
+js/acceso.js                              arma el acceso de cada persona (correo del local + DNI)
+scripts/crear-accesos.mjs                 crea o actualiza los accesos en Supabase
 js/estado.js                              datos compartidos y ventas sin internet
 js/api/supabase.js | demo.js              conexión a la nube | modo de prueba
 js/views/*.js                             una pantalla por archivo

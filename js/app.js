@@ -3,6 +3,7 @@ import { api } from './api/index.js';
 import { estado, puedeVender, cargarConfig, cargarProductos, subirPendientes, pendientes } from './estado.js';
 import { esc, $, $$, aviso, avisoError, ocupado } from './ui.js';
 import { aplicarTema } from './tema.js';
+import { dniValido, normalizarCorreo } from './acceso.js';
 import * as vender from './views/vender.js';
 import * as hoy from './views/hoy.js';
 import * as caja from './views/caja.js';
@@ -64,11 +65,11 @@ function mostrarLogin(mensaje = '') {
     <main class="login">
       <img src="icons/logo-512.png" alt="Pequeño Capricho Juguetería" class="login-logo" width="220" height="220">
       <form id="form-login" class="tarjeta" novalidate>
-        ${api.modo === 'prueba' ? '<p class="franja-aviso">Modo de prueba: poné cualquier correo y clave.</p>' : ''}
-        <label class="campo"><span class="etiqueta">Tu correo</span>
+        ${api.modo === 'prueba' ? '<p class="franja-aviso">Modo de prueba: poné cualquier correo y cualquier DNI.</p>' : ''}
+        <label class="campo"><span class="etiqueta">Correo del local</span>
           <input class="input" id="email" type="email" inputmode="email" autocomplete="username" value="${esc(recordado)}" required></label>
-        <label class="campo"><span class="etiqueta">Tu clave</span>
-          <input class="input input-clave" id="clave" type="password" inputmode="numeric" autocomplete="current-password" required></label>
+        <label class="campo"><span class="etiqueta">Tu DNI <small>(sin puntos)</small></span>
+          <input class="input input-clave" id="clave" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" required></label>
         <p class="error" id="error-login" role="alert">${esc(mensaje)}</p>
         <button type="submit" class="btn btn-grande btn-principal">Entrar</button>
       </form>
@@ -77,9 +78,10 @@ function mostrarLogin(mensaje = '') {
   (recordado ? $('#clave') : $('#email')).focus();
   form.onsubmit = (e) => {
     e.preventDefault();
-    const email = $('#email').value.trim();
+    const email = normalizarCorreo($('#email').value);
     const clave = $('#clave').value;
-    if (!email || !clave) { $('#error-login').textContent = 'Escribí tu correo y tu clave'; return; }
+    if (!email) { $('#error-login').textContent = 'Escribí el correo del local'; return; }
+    if (!dniValido(clave)) { $('#error-login').textContent = 'Escribí tu DNI completo, sin puntos'; return; }
     ocupado($('button[type=submit]', form), async () => {
       try {
         await api.entrar(email, clave);
@@ -93,6 +95,8 @@ function mostrarLogin(mensaje = '') {
   };
 }
 
+const primerNombre = (n) => String(n || '').trim().split(/\s+/)[0];
+
 function armarPantalla() {
   const menu = MENU.filter((m) => !m.venta || puedeVender());
   app.innerHTML = `
@@ -100,6 +104,7 @@ function armarPantalla() {
       <img src="icons/logo-96.png" alt="" width="44" height="44">
       <div class="cabecera-texto"><strong>Pequeño Capricho</strong><small>Juguetería</small></div>
       <span class="estado-red" id="estado-red" hidden></span>
+      <a class="quien" href="#mas" title="Quién está usando la app">👤 ${esc(primerNombre(estado.perfil?.nombre))}</a>
     </header>
     <main id="pantalla" class="pantalla" tabindex="-1"></main>
     <nav class="menu-abajo" aria-label="Menú principal">

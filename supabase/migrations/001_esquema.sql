@@ -23,13 +23,16 @@ $$;
 -- ---------------------------------------------------------------------
 -- Usuarios y permisos
 --   duena    : vende, caja, stock, ajustes
---   ayudante : catálogo/stock (y más adelante pedidos online)
+--   empleado : lo mismo que la dueña (Lucía y Joaquín)
+--   ayudante : solo catálogo/stock (pensado para pedidos online más adelante)
 --   admin    : todo (el desarrollador)
+-- Cada persona entra con el correo del local + su DNI (ver js/acceso.js y
+-- scripts/crear-accesos.mjs).
 -- ---------------------------------------------------------------------
 create table if not exists public.perfiles (
   id         uuid primary key references auth.users(id) on delete cascade,
   nombre     text not null default '',
-  rol        text not null default 'ayudante' check (rol in ('duena','ayudante','admin')),
+  rol        text not null default 'ayudante' check (rol in ('duena','empleado','ayudante','admin')),
   creado_en  timestamptz not null default now()
 );
 
@@ -42,7 +45,7 @@ begin
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'nombre', split_part(new.email, '@', 1)),
-    case when new.raw_user_meta_data->>'rol' in ('duena','ayudante','admin')
+    case when new.raw_user_meta_data->>'rol' in ('duena','empleado','ayudante','admin')
          then new.raw_user_meta_data->>'rol' else 'ayudante' end
   )
   on conflict (id) do nothing;
@@ -60,12 +63,12 @@ $$;
 
 create or replace function public.puede_vender()
 returns boolean language sql stable as $$
-  select coalesce(public.mi_rol() in ('duena','admin'), false)
+  select coalesce(public.mi_rol() in ('duena','empleado','admin'), false)
 $$;
 
 create or replace function public.puede_catalogo()
 returns boolean language sql stable as $$
-  select coalesce(public.mi_rol() in ('duena','ayudante','admin'), false)
+  select coalesce(public.mi_rol() in ('duena','empleado','ayudante','admin'), false)
 $$;
 
 -- ---------------------------------------------------------------------
@@ -176,6 +179,7 @@ create table if not exists public.ventas (
   anulada_en        timestamptz,
   anulada_por       uuid,
   usuario_id        uuid default auth.uid(),
+  vendido_por       text,                    -- nombre de quien hizo la venta
   check ((medio in ('debito','credito')) = (posnet is not null))
 );
 create index if not exists ventas_fecha on public.ventas (fecha, creado_en);
@@ -276,11 +280,13 @@ begin
   v_com_pct := coalesce(comision_para(v_medio, v_posnet), 0);
 
   insert into ventas (client_id, creado_en, fecha, cantidad, rubro, monto, recargo_pct, recargo,
-                      total, medio, posnet, comision_pct, comision, producto_nombre, canal)
+                      total, medio, posnet, comision_pct, comision, producto_nombre, canal, vendido_por)
   values (v_client, v_creado, fecha_local(v_creado), v_cant,
           coalesce(nullif(p->>'rubro',''), 'Otros'), v_monto, v_pct, v_recargo, v_total,
           v_medio, v_posnet, v_com_pct, round(v_total * v_com_pct / 100, 2),
-          nullif(p->>'producto_nombre',''), coalesce(nullif(p->>'canal',''), 'local'))
+          nullif(p->>'producto_nombre',''), coalesce(nullif(p->>'canal',''), 'local'),
+          -- las ventas hechas sin internet traen el nombre de quien vendió
+          coalesce(nullif(p->>'vendido_por',''), (select nombre from perfiles where id = auth.uid())))
   returning * into v_venta;
 
   if nullif(p->>'producto_id','') is not null then

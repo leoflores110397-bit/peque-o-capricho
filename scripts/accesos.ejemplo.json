@@ -1,0 +1,9 @@
+{
+  "correo_local": "pequenocapricho@gmail.com",
+  "personas": [
+    { "nombre": "Mamá", "dni": "11111111", "rol": "duena" },
+    { "nombre": "Hijo", "dni": "22222222", "rol": "admin" },
+    { "nombre": "Lucía", "dni": "33333333", "rol": "empleado" },
+    { "nombre": "Joaquín", "dni": "44444444", "rol": "empleado" }
+  ]
+}

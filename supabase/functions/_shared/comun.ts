@@ -16,7 +16,7 @@ export const admin = (): SupabaseClient =>
     auth: { persistSession: false },
   });
 
-/** Verifica que quien llama sea la dueña o el admin. Devuelve el id del usuario o null. */
+/** Verifica que quien llama pueda vender (dueña, empleados o admin). Devuelve el id del usuario o null. */
 export async function usuarioQueVende(req: Request): Promise<string | null> {
   const token = req.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) return null;
@@ -24,7 +24,7 @@ export async function usuarioQueVende(req: Request): Promise<string | null> {
   const { data } = await db.auth.getUser(token);
   if (!data.user) return null;
   const { data: perfil } = await db.from('perfiles').select('rol').eq('id', data.user.id).maybeSingle();
-  return perfil && ['duena', 'admin'].includes(perfil.rol) ? data.user.id : null;
+  return perfil && ['duena', 'empleado', 'admin'].includes(perfil.rol) ? data.user.id : null;
 }
 
 export function base64(bytes: Uint8Array): string {

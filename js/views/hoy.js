@@ -106,6 +106,7 @@ function filaVenta(v, cajaCerrada) {
     v.cantidad > 1 ? `${v.cantidad} u.` : '',
     nombreMedio(v.medio, v.posnet),
     v.recargo > 0 ? `recargo ${Number(v.recargo_pct)}%` : '',
+    v.vendido_por ? `vendió ${String(v.vendido_por).split(' ')[0]}` : '',
   ].filter(Boolean).join(' · ');
   return `
     <li class="venta ${v.anulada ? 'anulada' : ''}">
