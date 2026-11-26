@@ -1,7 +1,7 @@
 import { api } from '../api/index.js';
 import { pendientes } from '../estado.js';
 import { resumenDia, cuentaCaja, textoDiferencia, pesos, leerNumero, fechaLocal, fechaLarga, horaLocal } from '../calculos.js';
-import { $, aviso, avisoError, confirmar, ocupado, campoPesos, esc } from '../ui.js';
+import { $, aviso, avisoError, confirmar, ocupado, campoPesos, esc, hoja } from '../ui.js';
 
 export async function render(raiz) {
   const hoy = fechaLocal();
@@ -102,10 +102,30 @@ export async function render(raiz) {
     el.textContent = vacio ? '' : textoDiferencia(diferencia);
   });
 
-  $('#cambiar-apertura', raiz).onclick = async () => {
-    const valor = prompt('¿Con cuánto efectivo empezaste?', String(caja.apertura));
-    if (valor === null) return;
-    try { await api.abrirCaja(leerNumero(valor)); aviso('Efectivo inicial corregido'); render(raiz); } catch (err) { avisoError(err); }
+  $('#cambiar-apertura', raiz).onclick = () => {
+    hoja('Corregir efectivo inicial', `
+      <form id="form-apertura">
+        <label class="campo"><span class="etiqueta">¿Con cuánto efectivo empezaste?</span>
+          <div class="campo-plata"><span aria-hidden="true">$</span>
+            <input id="nueva-apertura" inputmode="numeric" value="${new Intl.NumberFormat('es-AR').format(caja.apertura)}" aria-label="Efectivo inicial en pesos"></div>
+        </label>
+        <button type="submit" class="btn btn-grande btn-principal">Guardar</button>
+      </form>`, {
+      alAbrir(cuerpo, cerrar) {
+        campoPesos($('#nueva-apertura', cuerpo));
+        $('#form-apertura', cuerpo).onsubmit = (e) => {
+          e.preventDefault();
+          ocupado($('button', e.target), async () => {
+            try {
+              await api.abrirCaja(leerNumero($('#nueva-apertura', cuerpo).value));
+              aviso('Efectivo inicial corregido ✓');
+              cerrar();
+              render(raiz);
+            } catch (err) { avisoError(err); }
+          });
+        };
+      },
+    });
   };
 
   $('#cerrar', raiz).onsubmit = async (e) => {
