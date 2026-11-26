@@ -27,6 +27,8 @@ try {
   process.exit(1);
 }
 
+datos.correo_local = String(datos.correo_local || '').replace(/\s/g, '').toLowerCase();
+
 const encabezados = { apikey: CLAVE, Authorization: `Bearer ${CLAVE}`, 'Content-Type': 'application/json' };
 const pedir = async (ruta, opciones = {}) => {
   const res = await fetch(`${URL_BASE}${ruta}`, { ...opciones, headers: { ...encabezados, ...opciones.headers } });
@@ -77,4 +79,12 @@ for (const p of datos.personas) {
   });
   if (!perfil.ok) throw new Error(`No se pudo guardar el perfil de ${p.nombre}: ${JSON.stringify(perfil.datos)}`);
 }
+// correo para las fotos de tickets (Más › Ajustes)
+if (datos.email_tickets) {
+  const email = String(datos.email_tickets).replace(/\s/g, '').toLowerCase();
+  const r = await pedir('/rest/v1/config?id=eq.1', { method: 'PATCH', body: JSON.stringify({ email_tickets: email }) });
+  if (!r.ok) throw new Error(`No se pudo guardar el correo de tickets: ${JSON.stringify(r.datos)}`);
+  console.log(`✓ Correo para tickets: ${email}`);
+}
+
 console.log(`\nListo. Para entrar: correo ${datos.correo_local} + el DNI de cada uno (sin puntos).`);

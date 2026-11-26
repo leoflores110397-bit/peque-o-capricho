@@ -1,5 +1,6 @@
 {
   "correo_local": "pequenocapricho@gmail.com",
+  "email_tickets": "pequenocapricho@gmail.com",
   "personas": [
     { "nombre": "Mamá", "dni": "11111111", "rol": "duena" },
     { "nombre": "Hijo", "dni": "22222222", "rol": "admin" },

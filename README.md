@@ -55,7 +55,7 @@ También existe el rol `ayudante` (solo Stock), pensado para cuando se sume la v
 Cómo se crean los accesos:
 
 1. En Supabase, **Authentication › Sign In / Providers**: dejar *Email* activado, **desactivar "Allow new users to sign up"** (nadie más se puede registrar) y desactivar *Confirm email*.
-2. Copiar `scripts/accesos.ejemplo.json` a `scripts/accesos.json` y completar el correo del local, los nombres y los DNI reales. Ese archivo **no se sube a GitHub** (está en `.gitignore`).
+2. Copiar `scripts/accesos.ejemplo.json` a `scripts/accesos.json` y completar el correo del local, el correo para los tickets, los nombres y los DNI reales. Ese archivo **no se sube a GitHub** (está en `.gitignore`).
 3. Correr (con la *service_role key* de **Project Settings › API**, que es secreta y nunca va en la app):
 
    ```bash
