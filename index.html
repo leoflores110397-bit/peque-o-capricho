@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pequeño Capricho</title>
+  <meta name="description" content="Ventas, caja y stock de Pequeño Capricho Juguetería">
+  <meta name="theme-color" content="#5A17EB">
+  <meta name="color-scheme" content="light dark">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icons/favicon.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Pequeño Capricho">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    // aplica el tema guardado antes de dibujar, para que no parpadee
+    try { var t = localStorage.getItem('pc-tema'); if (t === 'claro') document.documentElement.dataset.theme = 'light'; if (t === 'oscuro') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
+  </script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="arranque"><img src="icons/logo-192.png" alt="Pequeño Capricho" width="160" height="160"></div>
+  </div>
+  <noscript>Esta app necesita JavaScript activado.</noscript>
+</body>
+</html>
