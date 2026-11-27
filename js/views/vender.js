@@ -8,7 +8,7 @@ const RECARGOS_RAPIDOS = [0, 10, 15, 20, 25];
 // Como en el prototipo: arranca en Efectivo y recuerda el último posnet y recargo usados.
 const recordado = (k, def) => { try { return localStorage.getItem(k) ?? def; } catch { return def; } };
 const nuevaVenta = () => ({
-  producto: null, cantidad: 1, monto: 0, montoAuto: true, rubro: null, medio: 'efectivo',
+  producto: null, nombreLibre: '', cantidad: 1, monto: 0, montoAuto: true, rubro: null, medio: 'efectivo',
   posnet: recordado('pc-ultimo-posnet', 'mercadopago'), recargoPct: Number(recordado('pc-ultimo-recargo', 0)) || 0,
 });
 
@@ -100,12 +100,13 @@ export async function render(raiz) {
     } else if (b.dataset.recargo !== undefined) {
       f.recargoPct = Number(b.dataset.recargo);
       $('#recargo-otro', form).value = '';
-    } else if (b.id === 'elegir-producto') {
+    } else if (b.id === 'elegir-producto' || b.id === 'editar-nombre') {
       abrirSelector();
       return;
     } else if (b.id === 'quitar-producto') {
+      if (f.producto && f.montoAuto) f.monto = 0;
       f.producto = null;
-      if (f.montoAuto) f.monto = 0;
+      f.nombreLibre = '';
     } else {
       return;
     }
@@ -132,7 +133,14 @@ export async function render(raiz) {
              <small>${pesos(p.precio)} · quedan ${p.cantidad}</small></div>
            <button type="button" class="btn-cerrar" id="quitar-producto" aria-label="Quitar producto">✕</button>
          </div>`
-      : `<button type="button" class="btn btn-elegir" id="elegir-producto">🔍 Elegir del stock</button>`;
+      : f.nombreLibre
+        ? `<div class="producto-elegido">
+             <span class="mini-foto sin-foto" aria-hidden="true">✏️</span>
+             <button type="button" class="producto-elegido-texto boton-texto" id="editar-nombre" aria-label="Cambiar el nombre">
+               <strong>${esc(f.nombreLibre)}</strong><small>Escrito a mano · no descuenta stock</small></button>
+             <button type="button" class="btn-cerrar" id="quitar-producto" aria-label="Quitar producto">✕</button>
+           </div>`
+        : `<button type="button" class="btn btn-elegir" id="elegir-producto">🔍 Elegir del stock o escribir</button>`;
     $('#cantidad', form).textContent = f.cantidad;
     if (document.activeElement !== inMonto) {
       inMonto.value = f.monto ? new Intl.NumberFormat('es-AR').format(f.monto) : '';
@@ -155,16 +163,28 @@ export async function render(raiz) {
 
   function abrirSelector() {
     const html = `
-      <input type="search" class="buscador" placeholder="Buscar por nombre…" aria-label="Buscar producto" enterkeyhint="search">
+      <form class="buscar-producto" novalidate>
+        <input type="search" class="buscador" placeholder="Buscá o escribí qué vendiste…" aria-label="Buscar o escribir producto" enterkeyhint="done" autocomplete="off" value="${esc(f.nombreLibre)}">
+      </form>
       <ul class="lista-productos" role="list"></ul>`;
-    hoja('Elegir producto', html, {
+    hoja('¿Qué vendiste?', html, {
       alAbrir(cuerpo, cerrar) {
         const buscar = $('.buscador', cuerpo);
         const lista = $('.lista-productos', cuerpo);
         const pintarLista = () => {
           const q = normalizar(buscar.value);
           const items = estado.productos.filter((p) => normalizar(p.nombre).includes(q));
-          lista.innerHTML = items.length
+          const texto = buscar.value.trim();
+          const exacto = items.some((p) => normalizar(p.nombre) === q);
+          // opción de escribirlo a mano, para lo que todavía no está cargado en el stock
+          const libre = texto && !exacto
+            ? `<li><button type="button" class="item-producto item-libre" data-libre="1">
+                 <span class="mini-foto sin-foto" aria-hidden="true">✏️</span>
+                 <span class="item-texto"><strong>Vender "${esc(texto)}"</strong>
+                   <small>Sin elegir del stock (no descuenta stock)</small></span>
+               </button></li>`
+            : '';
+          lista.innerHTML = libre + (items.length
             ? items.map((p) => `
                 <li><button type="button" class="item-producto" data-id="${p.id}">
                   ${miniFoto(p)}
@@ -172,21 +192,40 @@ export async function render(raiz) {
                     <small class="${p.cantidad <= avisoStock() ? 'poco' : ''}">${p.cantidad > 0 ? `Quedan ${p.cantidad}` : 'Sin stock'}</small></span>
                   <span class="item-precio">${pesos(p.precio)}</span>
                 </button></li>`).join('')
-            : `<li>${iconoVacio(estado.productos.length ? 'No hay productos con ese nombre' : 'Todavía no cargaste productos en Stock')}</li>`;
+            : texto ? '' : `<li>${iconoVacio(estado.productos.length
+              ? 'Escribí para buscar en el stock'
+              : 'Todavía no hay productos en Stock. Escribí arriba qué vendiste.', '✏️')}</li>`);
         };
+        const usarLibre = () => {
+          const texto = buscar.value.trim();
+          if (!texto) return;
+          f.producto = null;
+          f.nombreLibre = texto;
+          cerrar();
+          pintar();
+        };
+        $('.buscar-producto', cuerpo).addEventListener('submit', (e) => {
+          e.preventDefault();
+          const q = normalizar(buscar.value.trim());
+          const exacto = estado.productos.find((p) => normalizar(p.nombre) === q);
+          if (exacto) lista.querySelector(`[data-id="${exacto.id}"]`)?.click();
+          else usarLibre();
+        });
         buscar.addEventListener('input', pintarLista);
         lista.addEventListener('click', (e) => {
+          if (e.target.closest('[data-libre]')) { usarLibre(); return; }
           const b = e.target.closest('[data-id]');
           if (!b) return;
           const p = estado.productos.find((x) => x.id === b.dataset.id);
           f.producto = p;
+          f.nombreLibre = '';
           f.rubro = p.rubro;
           if (f.montoAuto || !f.monto) { f.monto = p.precio * f.cantidad; f.montoAuto = true; }
           cerrar();
           pintar();
         });
         pintarLista();
-        if (window.matchMedia('(min-width: 700px)').matches) buscar.focus();
+        buscar.focus();
       },
     });
   }
@@ -201,7 +240,7 @@ export async function render(raiz) {
         const datos = {
           monto: f.monto, cantidad: f.cantidad, rubro: f.rubro || f.producto?.rubro || 'Otros', medio: f.medio,
           posnet: ES_TARJETA(f.medio) ? f.posnet : null, recargo_pct: ES_TARJETA(f.medio) ? f.recargoPct : 0,
-          producto_id: f.producto?.id || null, producto_nombre: f.producto?.nombre || null,
+          producto_id: f.producto?.id || null, producto_nombre: f.producto?.nombre || f.nombreLibre || null,
         };
         const r = await guardarVenta(datos);
         if (ES_TARJETA(f.medio)) {
