@@ -83,8 +83,8 @@ export const SUPABASE_ANON_KEY = 'eyJ...';
 La anon key es pública por diseño; lo que protege los datos son los permisos de la base (RLS), que ya vienen en el SQL.
 
 ### 2.4 Publicarla (GitHub Pages)
-1. En GitHub: **Settings › Pages › Source: GitHub Actions**.
-2. Cada vez que se sube un cambio a `main`, `.github/workflows/publicar.yml` corre las pruebas y publica la app en `https://USUARIO.github.io/peque-o-capricho/`.
+1. En GitHub: **Settings › Pages › Build and deployment › Source: Deploy from a branch**, rama **main**, carpeta **/ (root)**, **Save**.
+2. Cada vez que se sube un cambio a `main`, en uno o dos minutos queda publicado en `https://USUARIO.github.io/peque-o-capricho/`. Las pruebas corren solas en cada cambio (`.github/workflows/publicar.yml`).
 
 ### 2.5 Instalarla
 - **Android (Chrome):** abrir el link › menú ⋮ › **Agregar a la pantalla principal** / **Instalar app**.

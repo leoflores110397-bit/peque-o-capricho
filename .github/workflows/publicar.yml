@@ -1,19 +1,16 @@
-# Publica la app en GitHub Pages cada vez que se sube un cambio a main.
-name: Publicar app
+# Corre las pruebas en cada cambio.
+# La app se publica con GitHub Pages directo desde la rama main
+# (Settings › Pages › Source: Deploy from a branch › main › / (root)).
+name: Pruebas
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
   probar:
@@ -24,20 +21,3 @@ jobs:
         with:
           node-version: 22
       - run: npm test
-
-  publicar:
-    needs: probar
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Armar carpeta del sitio
-        run: |
-          mkdir _site
-          cp -r index.html manifest.webmanifest sw.js css js icons _site/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-      - id: deploy
-        uses: actions/deploy-pages@v4
