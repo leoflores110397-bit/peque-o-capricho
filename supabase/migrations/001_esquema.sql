@@ -484,6 +484,18 @@ drop policy if exists tickets_editar on public.tickets;
 create policy tickets_editar on public.tickets for update
   using (public.puede_vender()) with check (public.puede_vender());
 
+-- Permisos de tablas (por si el proyecto no los da solo a las tablas nuevas).
+-- Qué filas ve cada uno lo deciden las políticas de arriba.
+grant usage on schema public to authenticated, service_role;
+grant select on public.perfiles, public.config, public.productos, public.movimientos_stock,
+  public.ventas, public.cajas, public.tickets to authenticated;
+grant update on public.config to authenticated;
+grant insert, update on public.productos, public.tickets to authenticated;
+grant all on all tables in schema public to service_role;
+grant all on all sequences in schema public to service_role;
+revoke all on public.perfiles, public.config, public.productos, public.movimientos_stock,
+  public.ventas, public.cajas, public.tickets from anon;
+
 grant execute on function public.registrar_venta(jsonb)       to authenticated;
 grant execute on function public.anular_venta(uuid)           to authenticated;
 grant execute on function public.ajustar_stock(uuid, int)     to authenticated;
